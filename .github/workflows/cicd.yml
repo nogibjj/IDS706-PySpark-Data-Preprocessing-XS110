@@ -21,3 +21,12 @@ jobs:
         run: make format
       - name: deploy
         run: make deploy
+      - name: pyspark
+        channels:
+          - conda-forge
+        dependencies:
+          - python=3.7.3
+          - pytest=5.0.1
+          - requests=2.22.0
+          - pylint
+          - pyspark=2.4.4
