@@ -1,47 +1,75 @@
 
-# Global YouTube Statistics 2023 
+# Use PySpark to perform data processing on a large dataset.
 
-## Data
-
-The data is from kaggle [Global YouTube Statistics](https://www.kaggle.com/datasets/nelgiriyewithana/global-youtube-statistics-2023). It has 28 columns with comprehensive details on top creators' subscriber counts, video views, upload frequency, country of origin, earnings, and more.
-
-I downloaded `Global YouTube Statistics.csv` from kaggle and uploaded it into this resporitory.
-
+This project did data processing on a large dataset using PySpark. The dataset is stored in databricks data file system(DFS), specifically the orders and customers tables.
 ## Setup
 
-### 1. Update requirements.txt:
+
+### 1. Upload tables to databricks
+
+I used `add data` UI in databricks to upload the orders.csv and customers.csv to DFS. They are saved in `dbfs:/user/hive/warehouse`
+
+***customers:***
+![Alt text](image-1.png)
+
+***orders:***
+![Alt text](image-2.png)
+
+
+### 2. create pyspark_data_preprocessing.py notebook in databricks
+
+I wrote my code in pyspark_data_preprocessing.py:
+
+code1
+![Alt text](image-3.png)
+code2
+![Alt text](image-4.png)
+
+
+I did:
+
+1. Loading data into a dataframe
+
+```python
+# Read data in Delta format
+orders = spark.read.format("delta").load('dbfs:/user/hive/warehouse/orders')
+customers = spark.read.format("delta").load('dbfs:/user/hive/warehouse/customers')
 ```
-#script
-pandas==2.0.3
-matplotlib==3.7.2
+2. use spark SQL and filtering and grouping dataframe(see part3 in the following)
+
+
+### 3.Use of Spark SQL and Transformations
+
+***Spark SQL***: A SQL query is employed to fetch the top 10 customers who have placed the most orders. This serves as an example of leveraging Spark's SQL capabilities to extract insights directly from distributed datasets.
+
+```python
+# Spark SQL Query: Get top 10 customers who purchased most orders
+top_ordered = spark.sql(
+    """
+    SELECT customerName, COUNT(O.orderNumber) as orderNum
+    FROM customers AS C
+    LEFT JOIN orders AS O ON C.customerNumber = O.customerNumber
+    GROUP BY customerName
+    HAVING customerName IS NOT NULL
+    ORDER BY orderNum DESC
+    LIMIT 10
+"""
+)
+```
+***Data Transformation***: PySpark's DataFrame API is utilized to transform the customer data. The data is first filtered to only include records from the USA. Subsequently, it's grouped by state to aggregate the count of customers in each state. This showcases the transformation capability of PySpark in handling and reshaping large datasets.
+
+```python
+customers.filter(customers.country == "USA")
+  .groupBy("state")
+  .agg(count("customerNumber").alias("total_customer"))
+  .orderBy(desc("total_customer"))
 
 ```
-### 2. Create a new python script `test_script.py`
 
-### 3. Update Makefile
+## Results
 
-```
-test:
-	python -m pytest -vv --cov=main --cov=mylib test_*.py
+[![CI](https://github.com/nogibjj/IDS706-PySpark-Data-Preprocessing-XS110/actions/workflows/cicd.yml/badge.svg)](https://github.com/nogibjj/IDS706-PySpark-Data-Preprocessing-XS110/actions/workflows/cicd.yml)
 
-```
+The results are converted to a user-friendly markdown format using the tabulate library and saved to [`result.md`](https://github.com/nogibjj/IDS706-PySpark-Data-Preprocessing-XS110/blob/main/result.md). This markdown file contains tables showing the top 10 customers by order volume and the count of customers for each state in the USA.
 
-## Data Visualization
-
-I analyse the top creators' subscriber counts, video views, upload frequency, country of origin, earnings.
-
-### 1. Summary statistics using the describe method
-
-![Alt text](image1.png)
-
-### 2. Mean, Median and Mode
-
-![Alt text](image2.png)
-
-### 3. Variance and standard deviation
-
-![Alt text](image3.png)
-
-### 4. histogram of subscribers
-
-![Alt text](image4.png)
+![Alt text](image.png)
