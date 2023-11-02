@@ -15,6 +15,11 @@ I used `add data` UI in databricks to upload the orders.csv and customers.csv to
 ***orders:***
 ![Alt text](image-2.png)
 
+### 3. Create a Spark cluster
+
+![Alt text](image-5.png)
+
+Create one cluster in my Azure Databricks workspace by using the Azure Databricks portal.
 
 ### 2. create pyspark_data_preprocessing.py notebook in databricks
 
